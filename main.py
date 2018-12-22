@@ -8,6 +8,7 @@ import hashlib
 import subprocess
 from gtts import gTTS
 import os
+from tendo import singleton
 import time
 
 
@@ -68,7 +69,6 @@ class Player:
             self._music_process.stdin.write(b' ')
             self._music_process.stdin.flush()
         self._is_playing = False
-        time.sleep(0.05)
 
     def next_music(self):
         self._music_index = (self._music_index + 1) % len(self._music_files)
@@ -93,6 +93,11 @@ def _get_args():
 
 def main(stdscr):
     args = _get_args()
+    try:
+        single_instance = singleton.SingleInstance()
+    except singleton.SingleInstanceException:
+        return
+    subprocess.call(['killall', 'mplayer'], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
     player = Player(args.music_dir)
     lang = 'en'
     while True:

@@ -1,0 +1,7 @@
+.idea/
+.git/
+cmake-build-debug/
+CMakeLists.txt
+*.pyc
+*.swp
+*~

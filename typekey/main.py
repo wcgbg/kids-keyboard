@@ -4,6 +4,8 @@
 import curses
 import random
 import subprocess
+import glob
+import os
 from PIL import Image, ImageDraw, ImageFont
 
 
@@ -35,6 +37,9 @@ def ascii_art(text):
 
 
 def main(stdscr):
+    self_dir = os.path.dirname(os.path.realpath(__file__))
+    sounds = glob.glob(self_dir + '/sound/*.mp3')
+    assert sounds
     char_idx = random.randint(0, 25)
     while True:
         curses.curs_set(False)
@@ -47,7 +52,9 @@ def main(stdscr):
         elif c == ord('a') + char_idx:
             stdscr.clear()
             curses.endwin()
+            proc = subprocess.Popen(['mplayer', random.choice(sounds)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             subprocess.check_call(['sl'])
+            proc.kill()
             stdscr = curses.initscr()
             char_idx = random.randint(0, 25)
 

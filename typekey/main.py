@@ -6,6 +6,7 @@ import random
 import string
 import subprocess
 import glob
+import time
 import os
 from PIL import Image, ImageDraw, ImageFont
 
@@ -51,6 +52,7 @@ def main(stdscr):
         lines = ascii_art(rand_char)
         for i, line in enumerate(lines):
             stdscr.addstr((scr_height-len(lines)) // 2 + i, (scr_width-len(line)) // 2, line)
+        start_time = time.time()
         # get input
         while True:
             c = stdscr.getch()
@@ -58,11 +60,23 @@ def main(stdscr):
                 return
             if chr(c).upper() == rand_char:
                 break
+        duration = time.time() - start_time
         stdscr.clear()
         curses.endwin()
         proc = subprocess.Popen(['mplayer', random.choice(sounds)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.check_call(['sl'])
-        subprocess.check_call(['sl','-l'])
+        if duration < 3:
+            subprocess.check_call(['sl', '-F'])
+            subprocess.check_call(['sl','-l', '-F'])
+            subprocess.check_call(['sl','-l', '-F'])
+        elif duration < 6:
+            subprocess.check_call(['sl'])
+            subprocess.check_call(['sl','-l'])
+            subprocess.check_call(['sl','-l'])
+        elif duration < 16:
+            subprocess.check_call(['sl'])
+            subprocess.check_call(['sl','-l'])
+        else:
+            subprocess.check_call(['sl'])
         proc.kill()
         stdscr = curses.initscr()
 

@@ -10,7 +10,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 
 def ascii_art(text):
-    font = ImageFont.truetype('FreeSans.ttf', 48)
+    font = ImageFont.truetype('/usr/share/fonts/truetype/freefont/FreeSans.ttf', 48)
     width, height = font.getsize(text)
     # round up to even
     height += height % 2
@@ -58,6 +58,7 @@ def main(stdscr):
             curses.endwin()
             proc = subprocess.Popen(['mplayer', random.choice(sounds)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             subprocess.check_call(['sl'])
+            subprocess.check_call(['sl','-l'])
             proc.kill()
             stdscr = curses.initscr()
             char_idx = random.randint(0, 25)

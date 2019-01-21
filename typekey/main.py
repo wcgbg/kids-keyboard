@@ -3,6 +3,7 @@
 
 import curses
 import random
+import string
 import subprocess
 import glob
 import os
@@ -42,26 +43,28 @@ def main(stdscr):
     sounds = glob.glob(self_dir + '/sound/*.mp3')
     assert sounds
     scr_height, scr_width = stdscr.getmaxyx()
-    char_idx = random.randint(0, 25)
     while True:
+        rand_char = random.choice(string.ascii_uppercase)
+        # draw char
         curses.curs_set(False)
         stdscr.clear()
-        lines = ascii_art(chr(ord('A') + char_idx))
+        lines = ascii_art(rand_char)
         for i, line in enumerate(lines):
             stdscr.addstr((scr_height-len(lines)) // 2 + i, (scr_width-len(line)) // 2, line)
         # get input
-        c = stdscr.getch()
-        if c == 27:  # ESC
-            break
-        elif c == ord('a') + char_idx or c == ord('A') + char_idx:
-            stdscr.clear()
-            curses.endwin()
-            proc = subprocess.Popen(['mplayer', random.choice(sounds)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            subprocess.check_call(['sl'])
-            subprocess.check_call(['sl','-l'])
-            proc.kill()
-            stdscr = curses.initscr()
-            char_idx = random.randint(0, 25)
+        while True:
+            c = stdscr.getch()
+            if c == 27:  # ESC
+                return
+            if chr(c).upper() == rand_char:
+                break
+        stdscr.clear()
+        curses.endwin()
+        proc = subprocess.Popen(['mplayer', random.choice(sounds)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.check_call(['sl'])
+        subprocess.check_call(['sl','-l'])
+        proc.kill()
+        stdscr = curses.initscr()
 
 
 if __name__ == '__main__':

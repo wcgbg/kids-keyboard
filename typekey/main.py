@@ -49,6 +49,8 @@ def main(stdscr):
         # draw char
         curses.curs_set(False)
         stdscr.clear()
+        if stdscr.getch() == 27:  # ESC
+            return
         lines = ascii_art(rand_char)
         for i, line in enumerate(lines):
             stdscr.addstr((scr_height-len(lines)) // 2 + i, (scr_width-len(line)) // 2, line)

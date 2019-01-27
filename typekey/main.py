@@ -64,11 +64,11 @@ def main(stdscr):
         stdscr.clear()
         curses.endwin()
         proc = subprocess.Popen(['mplayer', random.choice(sounds)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        if duration < 3:
+        if duration < 4:
             subprocess.check_call(['sl', '-F'])
             subprocess.check_call(['sl','-l', '-F'])
             subprocess.check_call(['sl','-l', '-F'])
-        elif duration < 6:
+        elif duration < 8:
             subprocess.check_call(['sl'])
             subprocess.check_call(['sl','-l'])
             subprocess.check_call(['sl','-l'])

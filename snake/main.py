@@ -29,7 +29,7 @@ def main(stdscr):
         except _curses.error as e:
             pass
         stdscr.refresh()
-        #time.sleep(1)
+        # time.sleep(1)
         # get input
         c = stdscr.getch()
         delta = None

@@ -12,7 +12,8 @@ from PIL import Image, ImageDraw, ImageFont
 
 
 def ascii_art(text):
-    font = ImageFont.truetype('/usr/share/fonts/truetype/freefont/FreeSans.ttf', 48)
+    font = ImageFont.truetype(
+        '/usr/share/fonts/truetype/freefont/FreeSans.ttf', 48)
     width, height = font.getsize(text)
     # round up to even
     height += height % 2
@@ -44,6 +45,7 @@ def main(stdscr):
     sounds = glob.glob(self_dir + '/sound/*.mp3')
     assert sounds
     scr_height, scr_width = stdscr.getmaxyx()
+    proc = None
     while True:
         rand_char = random.choice(string.ascii_uppercase)
         # draw char
@@ -53,7 +55,8 @@ def main(stdscr):
             return
         lines = ascii_art(rand_char)
         for i, line in enumerate(lines):
-            stdscr.addstr((scr_height-len(lines)) // 2 + i, (scr_width-len(line)) // 2, line)
+            stdscr.addstr((scr_height - len(lines)) // 2 + i,
+                          (scr_width - len(line)) // 2, line)
         start_time = time.time()
         # get input
         while True:
@@ -65,18 +68,20 @@ def main(stdscr):
         duration = time.time() - start_time
         stdscr.clear()
         curses.endwin()
-        proc = subprocess.Popen(['mplayer', random.choice(sounds)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        proc = subprocess.Popen(['mplayer', random.choice(sounds)],
+                                stdout=subprocess.DEVNULL,
+                                stderr=subprocess.DEVNULL)
         if duration < 4:
             subprocess.check_call(['sl', '-F'])
-            subprocess.check_call(['sl','-l', '-F'])
-            subprocess.check_call(['sl','-l', '-F'])
+            subprocess.check_call(['sl', '-l', '-F'])
+            subprocess.check_call(['sl', '-l', '-F'])
         elif duration < 8:
             subprocess.check_call(['sl'])
-            subprocess.check_call(['sl','-l'])
-            subprocess.check_call(['sl','-l'])
+            subprocess.check_call(['sl', '-l'])
+            subprocess.check_call(['sl', '-l'])
         elif duration < 16:
             subprocess.check_call(['sl'])
-            subprocess.check_call(['sl','-l'])
+            subprocess.check_call(['sl', '-l'])
         else:
             subprocess.check_call(['sl'])
         proc.kill()

@@ -11,7 +11,7 @@ def main(stdscr):
     curses.curs_set(False)
     height, width = stdscr.getmaxyx()
     snake = [(height // 2, width // 2)] * 5
-    food = (random.randint(0, height-1), random.randint(0, width-1))
+    food = (random.randint(0, height - 1), random.randint(0, width - 1))
     while True:
         # paint
         stdscr.clear()
@@ -55,7 +55,8 @@ def main(stdscr):
             snake[i] = snake[i - 1]
         snake[0] = (new_row, new_col)
         if snake[0] == food:
-            food = (random.randint(0, height-1), random.randint(0, width-1))
+            food = (random.randint(0, height - 1), random.randint(
+                0, width - 1))
             snake.append(snake[-1])
 
 

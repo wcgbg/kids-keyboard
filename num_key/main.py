@@ -48,7 +48,8 @@ class Player:
         return self._music_files[self._music_index]
 
     def music_name(self):
-        return os.path.splitext(os.path.basename(self._music_path()))[0].replace('_', ' ')
+        return os.path.splitext(os.path.basename(
+            self._music_path()))[0].replace('_', ' ')
 
     def play_music(self):
         if self._music_process:
@@ -56,7 +57,8 @@ class Player:
             self._music_process.stdin.flush()
         else:
             self._music_process = subprocess.Popen(
-                ['mplayer', '-loop', '0', self._music_path()],
+                ['mplayer', '-loop', '0',
+                 self._music_path()],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL)
@@ -97,7 +99,9 @@ def main(stdscr):
         single_instance = singleton.SingleInstance()
     except singleton.SingleInstanceException:
         return
-    subprocess.call(['killall', 'mplayer'], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    subprocess.call(['killall', 'mplayer'],
+                    stderr=subprocess.DEVNULL,
+                    stdout=subprocess.DEVNULL)
     player = Player(args.music_dir)
     lang = 'en'
     while True:

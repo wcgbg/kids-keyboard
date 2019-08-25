@@ -1,0 +1,17 @@
+Finding Fonts
+As far as I know, there is no way to list your installed kernel fonts other than looking in the directories they are stored in: /usr/share/consolefonts/ (Debian/etc.), /lib/kbd/consolefonts/ (Fedora), /usr/share/kbd/consolefonts (openSUSE)…you get the idea.
+
+Changing Fonts
+Readable fonts are not a new concept. Embrace the old! Readability matters. And so does configurability, which sometimes gets lost in the rush to the new-shiny.
+
+On Debian/Ubuntu/etc. systems you can run sudo dpkg-reconfigure console-setup to set your console font, then run the setupcon command in your console to activate the changes. setupcon is part of the console-setup package. If your Linux distribution doesn’t include it, there might be a package for you at openSUSE.
+
+You can also edit /etc/default/console-setup directly. This example sets the Terminus Bold font at 32 points, which is my favorite, and restricts the width to 80 columns.
+
+ACTIVE_CONSOLES="/dev/tty[1-6]"
+CHARMAP="UTF-8"
+CODESET="guess"
+FONTFACE="TerminusBold"
+FONTSIZE="16x32"
+SCREEN_WIDTH="80"
+The FONTFACE and FONTSIZE values come from the font’s filename, TerminusBold32x16.psf.gz. Yes, you have to know to reverse the order for FONTSIZE. Computers are so much fun. Run setupcon to apply the new configuration. You can see the whole character set for your active font with showconsolefont. Refer to man console-setup for complete options.

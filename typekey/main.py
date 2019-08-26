@@ -79,8 +79,13 @@ def main(stdscr):
         # draw char
         curses.curs_set(False)
         stdscr.clear()
-        if stdscr.getch() == 27:  # ESC
-            return
+        # wait until SPACE
+        while True:
+            c = stdscr.getch()
+            if c == 27:  # ESC
+                return
+            if c == 32:  # SPACE
+                break
         lines = ascii_art(rand_char, args.font_size, args.square_font)
         for i, line in enumerate(lines):
             stdscr.addstr((scr_height - len(lines)) // 2 + i,
@@ -91,7 +96,7 @@ def main(stdscr):
             c = stdscr.getch()
             if c == 27:  # ESC
                 return
-            if chr(c).upper() == rand_char:
+            if chr(c).upper() == rand_char.upper():
                 break
         duration = time.time() - start_time
         stdscr.clear()

@@ -15,9 +15,9 @@ def main(stdscr):
     head_color = 1
     body_color = 2
     food_color = 3
-    curses.init_pair(head_color, curses.COLOR_BLUE, curses.COLOR_BLACK)
-    curses.init_pair(body_color, curses.COLOR_BLUE, curses.COLOR_BLACK)
-    curses.init_pair(food_color, curses.COLOR_YELLOW, curses.COLOR_BLACK)
+    curses.init_pair(head_color, curses.COLOR_GREEN, curses.COLOR_BLACK)
+    curses.init_pair(body_color, curses.COLOR_GREEN, curses.COLOR_BLACK)
+    curses.init_pair(food_color, curses.COLOR_GREEN, curses.COLOR_BLACK)
     while True:
         # paint
         stdscr.clear()

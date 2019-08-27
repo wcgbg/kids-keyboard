@@ -15,3 +15,7 @@ FONTFACE="TerminusBold"
 FONTSIZE="16x32"
 SCREEN_WIDTH="80"
 The FONTFACE and FONTSIZE values come from the font’s filename, TerminusBold32x16.psf.gz. Yes, you have to know to reverse the order for FONTSIZE. Computers are so much fun. Run setupcon to apply the new configuration. You can see the whole character set for your active font with showconsolefont. Refer to man console-setup for complete options.
+
+
+
+setterm -repeat off

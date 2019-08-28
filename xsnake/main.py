@@ -6,8 +6,12 @@ import glob
 import os
 import pygame
 import random
+import time
 
 MIN_MARGIN = 64
+SELF_DIR = os.path.dirname(os.path.realpath(__file__))
+
+background_songs = None
 
 
 def gen_food_pos(snake_pos, map_size):
@@ -19,8 +23,7 @@ def gen_food_pos(snake_pos, map_size):
 
 
 def load_food_imgs(size):
-    self_dir = os.path.dirname(os.path.realpath(__file__))
-    img_files = glob.glob(self_dir + '/food_img/*.png')
+    img_files = glob.glob(SELF_DIR + '/food_img/*.png')
     assert img_files
     imgs = []
     for img_file in img_files:
@@ -30,9 +33,23 @@ def load_food_imgs(size):
 
 
 def load_ending_img(size):
-    self_dir = os.path.dirname(os.path.realpath(__file__))
-    img_file = self_dir + '/ending.png'
-    return pygame.transform.scale(pygame.image.load(img_file), (size, size))
+    return pygame.transform.scale(
+        pygame.image.load(SELF_DIR + '/ending.png'), (size, size))
+
+
+def play_background_music(ending=False):
+    if ending:
+        pygame.mixer.music.load(SELF_DIR + '/ending.mp3')
+        pygame.mixer.music.play(-1)
+    else:
+        global background_songs
+        if background_songs is None:
+            background_songs = glob.glob(SELF_DIR + '/bgmusic/*.mp3')
+            assert background_songs
+            random.shuffle(background_songs)
+        pygame.mixer.music.load(background_songs[0])
+        pygame.mixer.music.play(-1)
+        background_songs = background_songs[1:] + [background_songs[0]]
 
 
 def main():
@@ -43,6 +60,9 @@ def main():
     pygame.init()
     pygame.display.set_caption("Snake")
     pygame.mouse.set_visible(False)
+
+    play_background_music()
+
     surface = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
     surface_width, surface_height = surface.get_size()
     grid_size = (
@@ -94,9 +114,11 @@ def main():
                 snake_pos.append(snake_pos[-1])
                 if len(snake_pos) >= args.map_size * args.map_size // 2:
                     is_ended = True
+                    play_background_music(True)
                 else:
                     food_pos = gen_food_pos(snake_pos, args.map_size)
                     food_img = random.choice(food_imgs)
+                    play_background_music()
 
         surface.fill(pygame.Color(0, 0, 0))
 

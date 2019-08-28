@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import argparse
+import glob
+import os
 import pygame
 import random
-import os
-import glob
 
-MAP_SIZE = 5
 MIN_MARGIN = 64
 
 
-def gen_food_pos(snake_pos):
+def gen_food_pos(snake_pos, map_size):
     while True:
-        food_pos = (random.randint(0, MAP_SIZE - 1),
-                    random.randint(0, MAP_SIZE - 1))
+        food_pos = (random.randint(0, map_size - 1),
+                    random.randint(0, map_size - 1))
         if food_pos not in snake_pos:
             return food_pos
 
@@ -36,25 +36,29 @@ def load_ending_img(size):
 
 
 def main():
+    parser = argparse.ArgumentParser(description='Snake')
+    parser.add_argument('--map_size', type=int, default=6)
+    args = parser.parse_args()
+
     pygame.init()
     pygame.display.set_caption("Snake")
     pygame.mouse.set_visible(False)
     surface = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
     surface_width, surface_height = surface.get_size()
     grid_size = (
-        min(surface_width, surface_height) - MIN_MARGIN * 2) // MAP_SIZE
+        min(surface_width, surface_height) - MIN_MARGIN * 2) // args.map_size
     if grid_size % 2 == 0:
         grid_size -= 1  # make sure grid_size is odd
     assert grid_size > 0
-    left = (surface_width - MAP_SIZE * grid_size) // 2
-    top = (surface_height - MAP_SIZE * grid_size) // 2
+    left = (surface_width - args.map_size * grid_size) // 2
+    top = (surface_height - args.map_size * grid_size) // 2
     grid_color = pygame.Color(255, 255, 255)
     head_color = pygame.Color(100, 255, 100)
     body_color = pygame.Color(100, 200, 100)
     food_imgs = load_food_imgs(grid_size)
     ending_img = load_ending_img(min(surface_width, surface_height))
-    snake_pos = [(MAP_SIZE // 2, MAP_SIZE // 2)] * 5
-    food_pos = gen_food_pos(snake_pos)
+    snake_pos = [(args.map_size // 2, args.map_size // 2)] * 5
+    food_pos = gen_food_pos(snake_pos, args.map_size)
     food_img = random.choice(food_imgs)
     is_ended = False
     while True:
@@ -79,19 +83,19 @@ def main():
         if delta:
             new_head_pos = (snake_pos[0][0] + delta[0],
                             snake_pos[0][1] + delta[1])
-            if new_head_pos[0] < 0 or new_head_pos[0] >= MAP_SIZE:
+            if new_head_pos[0] < 0 or new_head_pos[0] >= args.map_size:
                 continue
-            if new_head_pos[1] < 0 or new_head_pos[1] >= MAP_SIZE:
+            if new_head_pos[1] < 0 or new_head_pos[1] >= args.map_size:
                 continue
             for i in range(len(snake_pos) - 1, 0, -1):
                 snake_pos[i] = snake_pos[i - 1]
             snake_pos[0] = new_head_pos
             if snake_pos[0] == food_pos:
                 snake_pos.append(snake_pos[-1])
-                if len(snake_pos) >= MAP_SIZE * MAP_SIZE // 2:
+                if len(snake_pos) >= args.map_size * args.map_size // 2:
                     is_ended = True
                 else:
-                    food_pos = gen_food_pos(snake_pos)
+                    food_pos = gen_food_pos(snake_pos, args.map_size)
                     food_img = random.choice(food_imgs)
 
         surface.fill(pygame.Color(0, 0, 0))
@@ -102,15 +106,15 @@ def main():
         else:
             pygame.draw.rect(
                 surface, grid_color,
-                pygame.Rect(left, top, MAP_SIZE * grid_size + 1,
-                            MAP_SIZE * grid_size + 1), 4)
-            for i in range(MAP_SIZE + 1):
+                pygame.Rect(left, top, args.map_size * grid_size + 1,
+                            args.map_size * grid_size + 1), 4)
+            for i in range(args.map_size + 1):
                 pygame.draw.line(
                     surface, grid_color, (left + i * grid_size, top),
-                    (left + i * grid_size, top + MAP_SIZE * grid_size))
+                    (left + i * grid_size, top + args.map_size * grid_size))
                 pygame.draw.line(
                     surface, grid_color, (left, top + i * grid_size),
-                    (left + MAP_SIZE * grid_size, top + i * grid_size))
+                    (left + args.map_size * grid_size, top + i * grid_size))
 
             for i, pos in reversed(list(enumerate(snake_pos))):
                 if i == 0:  # head

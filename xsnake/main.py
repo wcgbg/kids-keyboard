@@ -8,152 +8,201 @@ import pygame
 import random
 import time
 
+import maze_map
+
 MIN_MARGIN = 64
 SELF_DIR = os.path.dirname(os.path.realpath(__file__))
 
-background_songs = None
 
+class Game:
 
-def gen_food_pos(snake_pos, map_size):
-    while True:
-        food_pos = (random.randint(0, map_size - 1),
-                    random.randint(0, map_size - 1))
-        if food_pos not in snake_pos:
-            return food_pos
+    def __init__(self, map_size: int, maze: bool, surface):
+        self._map_size = map_size
+        self._surface = surface
 
+        self._maze_map = maze_map.MazeMap(map_size, map_size, maze)
 
-def load_food_imgs(size):
-    img_files = glob.glob(SELF_DIR + '/food_img/*.png')
-    assert img_files
-    imgs = []
-    for img_file in img_files:
-        imgs.append(
-            pygame.transform.scale(pygame.image.load(img_file), (size, size)))
-    return imgs
+        surface_width, surface_height = surface.get_size()
+        self._grid_size = (
+            min(surface_width, surface_height) - MIN_MARGIN * 2) // map_size
+        if self._grid_size % 2 == 0:
+            self._grid_size -= 1  # make sure self._grid_size is odd
+        assert self._grid_size > 0
+        self._left = (surface_width - map_size * self._grid_size) // 2
+        self._top = (surface_height - map_size * self._grid_size) // 2
+        self._food_imgs = self._load_food_imgs()
+        self._ending_img = self._load_ending_img()
+        self._snake_pos = [(map_size // 2, map_size // 2)] * 2
+        self._food_pos = self._gen_food_pos()
+        self._food_img = random.choice(self._food_imgs)
+        self._is_ended = False
 
+        self._background_songs = glob.glob(SELF_DIR + '/bgmusic/*.mp3')
+        assert self._background_songs
+        random.shuffle(self._background_songs)
+        self._play_background_music()
 
-def load_ending_img(size):
-    return pygame.transform.scale(
-        pygame.image.load(SELF_DIR + '/ending.png'), (size, size))
+    def _gen_food_pos(self):
+        while True:
+            food_pos = (random.randint(0,
+                                       self._maze_map.x_size() - 1),
+                        random.randint(0,
+                                       self._maze_map.y_size() - 1))
+            if food_pos not in self._snake_pos:
+                return food_pos
 
+    def _load_food_imgs(self):
+        img_files = glob.glob(SELF_DIR + '/food_img/*.png')
+        assert img_files
+        imgs = []
+        for img_file in img_files:
+            imgs.append(
+                pygame.transform.scale(
+                    pygame.image.load(img_file),
+                    (self._grid_size, self._grid_size)))
+        return imgs
 
-def play_background_music(ending=False):
-    if ending:
-        pygame.mixer.music.load(SELF_DIR + '/ending.mp3')
-        pygame.mixer.music.play(-1)
-    else:
-        global background_songs
-        if background_songs is None:
-            background_songs = glob.glob(SELF_DIR + '/bgmusic/*.mp3')
-            assert background_songs
-            random.shuffle(background_songs)
-        pygame.mixer.music.load(background_songs[0])
-        pygame.mixer.music.play(-1)
-        background_songs = background_songs[1:] + [background_songs[0]]
+    def _load_ending_img(self):
+        img_size = min(self._surface.get_size())
+        return pygame.transform.scale(
+            pygame.image.load(SELF_DIR + '/ending.png'), (img_size, img_size))
+
+    def _play_background_music(self):
+        if self._is_ended:
+            pygame.mixer.music.load(SELF_DIR + '/ending.mp3')
+            pygame.mixer.music.play(-1)
+        else:
+            pygame.mixer.music.load(self._background_songs[0])
+            pygame.mixer.music.play(-1)
+            self._background_songs = self._background_songs[1:] + [
+                self._background_songs[0]
+            ]
+
+    def update(self, direction):
+        if self._is_ended:
+            return
+
+        if direction:
+            assert direction in self._maze_map.directions()
+
+            if not self._maze_map.is_connected(self._snake_pos[0], direction):
+                return
+            new_head_pos = (self._snake_pos[0][0] + direction[0],
+                            self._snake_pos[0][1] + direction[1])
+            if new_head_pos == self._food_pos:
+                self._snake_pos = [new_head_pos] + self._snake_pos
+                if len(
+                        self._snake_pos
+                ) >= self._maze_map.x_size() * self._maze_map.y_size() // 2:
+                    self._is_ended = True
+                else:
+                    self._food_pos = self._gen_food_pos()
+                    self._food_img = random.choice(self._food_imgs)
+                self._play_background_music()
+            else:
+                self._snake_pos = [new_head_pos] + self._snake_pos[:-1]
+
+        self._surface.fill(pygame.Color(0, 0, 0))
+
+        if self._is_ended:
+            surface_width, surface_height = self._surface.get_size()
+            assert surface_width >= surface_height
+            self._surface.blit(self._ending_img,
+                               ((surface_width - surface_height) // 2, 0))
+        else:
+            grid_color = pygame.Color(60, 60, 60)
+            wall_color = pygame.Color(255, 255, 255)
+            head_color = pygame.Color(100, 255, 100)
+            body_color = pygame.Color(80, 160, 80)
+
+            for x in range(self._map_size + 1):
+                pygame.draw.line(self._surface, grid_color,
+                                 (self._left + x * self._grid_size, self._top),
+                                 (self._left + x * self._grid_size,
+                                  self._top + self._map_size * self._grid_size))
+            for y in range(self._map_size + 1):
+                pygame.draw.line(self._surface, grid_color,
+                                 (self._left, self._top + y * self._grid_size),
+                                 (self._left + self._map_size * self._grid_size,
+                                  self._top + y * self._grid_size))
+            for x in range(self._map_size + 1):
+                for y in range(self._map_size):
+                    if x == self._map_size or not self._maze_map.is_connected(
+                        (x, y), (-1, 0)):
+                        pygame.draw.line(
+                            self._surface, wall_color,
+                            (self._left + x * self._grid_size,
+                             self._top + y * self._grid_size),
+                            (self._left + x * self._grid_size,
+                             self._top + (y + 1) * self._grid_size), 3)
+            for y in range(self._map_size + 1):
+                for x in range(self._map_size):
+                    if y == self._map_size or not self._maze_map.is_connected(
+                        (x, y), (0, -1)):
+                        pygame.draw.line(
+                            self._surface, wall_color,
+                            (self._left + x * self._grid_size,
+                             self._top + y * self._grid_size),
+                            (self._left + (x + 1) * self._grid_size,
+                             self._top + y * self._grid_size), 3)
+
+            for i, pos in reversed(list(enumerate(self._snake_pos))):
+                if i == 0:  # head
+                    radius = int(self._grid_size * 0.45)
+                    color = head_color
+                else:
+                    radius = int(self._grid_size * 0.3)
+                    color = body_color
+                pygame.draw.circle(
+                    self._surface, color,
+                    (self._left + pos[0] * self._grid_size +
+                     self._grid_size // 2 + 1, self._top +
+                     pos[1] * self._grid_size + self._grid_size // 2 + 1),
+                    radius)
+            self._surface.blit(
+                self._food_img,
+                (self._left + self._food_pos[0] * self._grid_size,
+                 self._top + self._food_pos[1] * self._grid_size))
+
+        pygame.display.flip()
+
+    def is_ended(self) -> bool:
+        return self._is_ended
 
 
 def main():
     parser = argparse.ArgumentParser(description='Snake')
     parser.add_argument('--map_size', type=int, default=6)
+    parser.add_argument('--maze', action='store_true')
     args = parser.parse_args()
 
     pygame.init()
     pygame.display.set_caption("Snake")
     pygame.mouse.set_visible(False)
-
-    play_background_music()
-
     surface = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-    surface_width, surface_height = surface.get_size()
-    grid_size = (
-        min(surface_width, surface_height) - MIN_MARGIN * 2) // args.map_size
-    if grid_size % 2 == 0:
-        grid_size -= 1  # make sure grid_size is odd
-    assert grid_size > 0
-    left = (surface_width - args.map_size * grid_size) // 2
-    top = (surface_height - args.map_size * grid_size) // 2
-    grid_color = pygame.Color(255, 255, 255)
-    head_color = pygame.Color(100, 255, 100)
-    body_color = pygame.Color(100, 200, 100)
-    food_imgs = load_food_imgs(grid_size)
-    ending_img = load_ending_img(min(surface_width, surface_height))
-    snake_pos = [(args.map_size // 2, args.map_size // 2)] * 5
-    food_pos = gen_food_pos(snake_pos, args.map_size)
-    food_img = random.choice(food_imgs)
-    is_ended = False
+    game = Game(args.map_size, args.maze, surface)
+
     while True:
         event = pygame.event.wait()
         if event.type == pygame.QUIT:
             break
-        delta = None
+        direction = None
         if event.type == pygame.KEYDOWN:
             mods = pygame.key.get_mods()
             if mods & pygame.KMOD_CTRL and event.key == pygame.K_q:
                 break
+            if event.key == pygame.K_SPACE and game.is_ended():
+                game = Game(args.map_size, args.maze, surface)
+                continue
             if event.key == pygame.K_LEFT:
-                delta = (-1, 0)
+                direction = (-1, 0)
             elif event.key == pygame.K_RIGHT:
-                delta = (1, 0)
+                direction = (1, 0)
             elif event.key == pygame.K_UP:
-                delta = (0, -1)
+                direction = (0, -1)
             elif event.key == pygame.K_DOWN:
-                delta = (0, 1)
-        if is_ended:
-            continue
-        if delta:
-            new_head_pos = (snake_pos[0][0] + delta[0],
-                            snake_pos[0][1] + delta[1])
-            if new_head_pos[0] < 0 or new_head_pos[0] >= args.map_size:
-                continue
-            if new_head_pos[1] < 0 or new_head_pos[1] >= args.map_size:
-                continue
-            for i in range(len(snake_pos) - 1, 0, -1):
-                snake_pos[i] = snake_pos[i - 1]
-            snake_pos[0] = new_head_pos
-            if snake_pos[0] == food_pos:
-                snake_pos.append(snake_pos[-1])
-                if len(snake_pos) >= args.map_size * args.map_size // 2:
-                    is_ended = True
-                    play_background_music(True)
-                else:
-                    food_pos = gen_food_pos(snake_pos, args.map_size)
-                    food_img = random.choice(food_imgs)
-                    play_background_music()
-
-        surface.fill(pygame.Color(0, 0, 0))
-
-        if is_ended:
-            assert surface_width >= surface_height
-            surface.blit(ending_img, ((surface_width - surface_height) // 2, 0))
-        else:
-            pygame.draw.rect(
-                surface, grid_color,
-                pygame.Rect(left, top, args.map_size * grid_size + 1,
-                            args.map_size * grid_size + 1), 4)
-            for i in range(args.map_size + 1):
-                pygame.draw.line(
-                    surface, grid_color, (left + i * grid_size, top),
-                    (left + i * grid_size, top + args.map_size * grid_size))
-                pygame.draw.line(
-                    surface, grid_color, (left, top + i * grid_size),
-                    (left + args.map_size * grid_size, top + i * grid_size))
-
-            for i, pos in reversed(list(enumerate(snake_pos))):
-                if i == 0:  # head
-                    radius = int(grid_size * 0.45)
-                    color = head_color
-                else:
-                    radius = int(grid_size * 0.3)
-                    color = body_color
-                pygame.draw.circle(
-                    surface, color,
-                    (left + pos[0] * grid_size + grid_size // 2 + 1,
-                     top + pos[1] * grid_size + grid_size // 2 + 1), radius)
-            surface.blit(
-                food_img,
-                (left + food_pos[0] * grid_size, top + food_pos[1] * grid_size))
-
-        pygame.display.flip()
+                direction = (0, 1)
+        game.update(direction)
 
     pygame.quit()
 

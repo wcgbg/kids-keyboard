@@ -91,9 +91,10 @@ class Game:
                             self._snake_pos[0][1] + direction[1])
             if new_head_pos == self._food_pos:
                 self._snake_pos = [new_head_pos] + self._snake_pos
-                if len(
-                        self._snake_pos
-                ) >= self._maze_map.x_size() * self._maze_map.y_size() // 2:
+                ending_length = min(
+                    self._maze_map.x_size() * 2,
+                    self._maze_map.x_size() * self._maze_map.y_size() // 2)
+                if len(self._snake_pos) >= ending_length:
                     self._is_ended = True
                 else:
                     self._food_pos = self._gen_food_pos()

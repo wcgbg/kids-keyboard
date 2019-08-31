@@ -10,7 +10,7 @@ import time
 
 import maze_map
 
-MIN_MARGIN = 64
+MIN_MARGIN = 16
 SELF_DIR = os.path.dirname(os.path.realpath(__file__))
 
 

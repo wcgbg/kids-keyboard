@@ -111,7 +111,7 @@ class Game:
             self._surface.blit(self._ending_img,
                                ((surface_width - surface_height) // 2, 0))
         else:
-            grid_color = pygame.Color(60, 60, 60)
+            grid_color = pygame.Color(20, 20, 20)
             wall_color = pygame.Color(255, 255, 255)
             head_color = pygame.Color(100, 255, 100)
             body_color = pygame.Color(80, 160, 80)

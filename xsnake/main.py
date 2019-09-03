@@ -6,6 +6,7 @@ import glob
 import os
 import pygame
 import random
+import subprocess
 import time
 
 import maze_map
@@ -17,9 +18,10 @@ SELF_DIR = os.path.dirname(os.path.realpath(__file__))
 
 class Game:
 
-    def __init__(self, map_size: int, maze: bool, surface):
+    def __init__(self, map_size: int, maze: bool, video_ending: bool, surface):
         self._map_size = map_size
         self._surface = surface
+        self._video_ending = video_ending
 
         self._maze_map = maze_map.MazeMap(map_size, map_size, maze)
 
@@ -35,6 +37,7 @@ class Game:
                      map_size * self._grid_size) // 2 + PROGRESS_BAR_HEIGHT
         self._food_imgs = self._load_food_imgs()
         self._ending_img = self._load_ending_img()
+        self._mplayer_proc = None
         self._snake_pos = [(map_size // 2, map_size // 2)] * 2
         self._food_pos = self._gen_food_pos()
         self._food_img = random.choice(self._food_imgs)
@@ -47,6 +50,10 @@ class Game:
         assert self._background_songs
         random.shuffle(self._background_songs)
         self._play_background_music()
+
+    def __del__(self):
+        if self._mplayer_proc:
+            self._mplayer_proc.kill()
 
     def _gen_food_pos(self):
         while True:
@@ -99,10 +106,16 @@ class Game:
                 self._snake_pos = [new_head_pos] + self._snake_pos
                 if len(self._snake_pos) >= self._ending_length:
                     self._is_ended = True
+                    if self._video_ending:
+                        pygame.mixer.music.stop()
+                        self._mplayer_proc = subprocess.Popen(
+                            ['mplayer', '-fs', SELF_DIR + '/ending.mp4'])
+                    else:
+                        self._play_background_music()
                 else:
                     self._food_pos = self._gen_food_pos()
                     self._food_img = random.choice(self._food_imgs)
-                self._play_background_music()
+                    self._play_background_music()
             else:
                 self._snake_pos = [new_head_pos] + self._snake_pos[:-1]
 
@@ -185,13 +198,14 @@ def main():
     parser = argparse.ArgumentParser(description='Snake')
     parser.add_argument('--map_size', type=int, default=6)
     parser.add_argument('--maze', action='store_true')
+    parser.add_argument('--video_ending', action='store_true')
     args = parser.parse_args()
 
     pygame.init()
     pygame.display.set_caption("Snake")
     pygame.mouse.set_visible(False)
     surface = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-    game = Game(args.map_size, args.maze, surface)
+    game = Game(args.map_size, args.maze, args.video_ending, surface)
 
     while True:
         event = pygame.event.wait()
@@ -203,7 +217,9 @@ def main():
             if mods & pygame.KMOD_CTRL and event.key == pygame.K_q:
                 break
             if event.key == pygame.K_SPACE and game.is_ended():
-                game = Game(args.map_size, args.maze, surface)
+                del game
+                game = Game(args.map_size, args.maze, args.video_ending,
+                            surface)
                 continue
             if event.key == pygame.K_LEFT:
                 direction = (-1, 0)

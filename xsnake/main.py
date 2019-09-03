@@ -10,7 +10,8 @@ import time
 
 import maze_map
 
-MIN_MARGIN = 16
+MIN_MARGIN = 32
+PROGRESS_BAR_HEIGHT = 8
 SELF_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
@@ -23,19 +24,24 @@ class Game:
         self._maze_map = maze_map.MazeMap(map_size, map_size, maze)
 
         surface_width, surface_height = surface.get_size()
+        assert surface_width >= surface_height
         self._grid_size = (
-            min(surface_width, surface_height) - MIN_MARGIN * 2) // map_size
+            surface_height - MIN_MARGIN * 2 - PROGRESS_BAR_HEIGHT) // map_size
         if self._grid_size % 2 == 0:
             self._grid_size -= 1  # make sure self._grid_size is odd
         assert self._grid_size > 0
         self._left = (surface_width - map_size * self._grid_size) // 2
-        self._top = (surface_height - map_size * self._grid_size) // 2
+        self._top = (surface_height -
+                     map_size * self._grid_size) // 2 + PROGRESS_BAR_HEIGHT
         self._food_imgs = self._load_food_imgs()
         self._ending_img = self._load_ending_img()
         self._snake_pos = [(map_size // 2, map_size // 2)] * 2
         self._food_pos = self._gen_food_pos()
         self._food_img = random.choice(self._food_imgs)
         self._is_ended = False
+        self._ending_length = min(
+            self._maze_map.x_size() * 2,
+            self._maze_map.x_size() * self._maze_map.y_size() // 2)
 
         self._background_songs = glob.glob(SELF_DIR + '/bgmusic/*.mp3')
         assert self._background_songs
@@ -91,10 +97,7 @@ class Game:
                             self._snake_pos[0][1] + direction[1])
             if new_head_pos == self._food_pos:
                 self._snake_pos = [new_head_pos] + self._snake_pos
-                ending_length = min(
-                    self._maze_map.x_size() * 2,
-                    self._maze_map.x_size() * self._maze_map.y_size() // 2)
-                if len(self._snake_pos) >= ending_length:
+                if len(self._snake_pos) >= self._ending_length:
                     self._is_ended = True
                 else:
                     self._food_pos = self._gen_food_pos()
@@ -115,6 +118,13 @@ class Game:
             wall_color = pygame.Color(255, 255, 255)
             head_color = pygame.Color(100, 255, 100)
             body_color = pygame.Color(80, 160, 80)
+
+            # progress bar
+            progress_bar_length = self._surface.get_width() * len(
+                self._snake_pos) // self._ending_length
+            self._surface.fill(
+                head_color,
+                pygame.Rect(0, 0, progress_bar_length, PROGRESS_BAR_HEIGHT))
 
             for x in range(self._map_size + 1):
                 pygame.draw.line(self._surface, grid_color,

@@ -109,7 +109,7 @@ class Game:
                     if self._video_ending:
                         pygame.mixer.music.stop()
                         self._mplayer_proc = subprocess.Popen(
-                            ['mplayer', '-fs', SELF_DIR + '/ending.mp4'])
+                            ['vlc', '-f', SELF_DIR + '/ending.mp4'])
                     else:
                         self._play_background_music()
                 else:

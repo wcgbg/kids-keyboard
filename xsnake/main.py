@@ -83,9 +83,11 @@ class Game:
     def _play_background_music(self):
         if self._is_ended:
             pygame.mixer.music.load(SELF_DIR + '/ending.mp3')
+            pygame.mixer.music.set_volume(1.0)
             pygame.mixer.music.play(-1)
         else:
             pygame.mixer.music.load(self._background_songs[0])
+            pygame.mixer.music.set_volume(0.4)
             pygame.mixer.music.play(-1)
             self._background_songs = self._background_songs[1:] + [
                 self._background_songs[0]
@@ -218,6 +220,7 @@ def main():
                 break
             if event.key == pygame.K_SPACE and game.is_ended():
                 del game
+                args.map_size += 1
                 game = Game(args.map_size, args.maze, args.video_ending,
                             surface)
                 continue

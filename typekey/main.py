@@ -58,7 +58,7 @@ def main(stdscr):
     parser.add_argument('--font_size', type=int, default=48)
     parser.add_argument('--square_font', action='store_true')
     parser.add_argument(
-        '--charset', default='upper', help='e.g. upper,lower,digits')
+        '--charset', default='upper', help='e.g. upper,lower,digits,jeremy')
     args = parser.parse_args()
 
     self_dir = os.path.dirname(os.path.realpath(__file__))
@@ -73,6 +73,8 @@ def main(stdscr):
         character_set += string.ascii_lowercase
     if 'digits' in args.charset:
         character_set += string.digits
+    if 'jeremy' in args.charset:
+        character_set += 'WRTYUOPSJZXCVM'
     assert character_set
     while True:
         rand_char = random.choice(character_set)

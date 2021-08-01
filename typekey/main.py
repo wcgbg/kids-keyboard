@@ -12,10 +12,15 @@ import os
 from PIL import Image, ImageDraw, ImageFont
 
 
-def ascii_art(text: str, font_size: int, square_font: bool) -> str:
+def ascii_art(text: str, prefex_length: int, font_size: int,
+              square_font: bool) -> (str, int):
+    ''' Returns the ascii chars and the prefix width'''
     font = ImageFont.truetype(
         '/usr/share/fonts/truetype/freefont/FreeSans.ttf', font_size)
     width, height = font.getsize(text)
+    assert prefex_length >= 0
+    assert prefex_length < len(text)
+    prefix_width, _ = font.getsize(text[:prefex_length])
     if square_font:
         image = Image.new('1', (width, height), 1)
         draw = ImageDraw.Draw(image)
@@ -26,7 +31,7 @@ def ascii_art(text: str, font_size: int, square_font: bool) -> str:
             for col in range(width):
                 line += ' ' if image.getpixel((col, row)) else '█'
             result.append(line)
-        return result
+        return result, prefix_width
     else:
         # round up to even
         height += height % 2
@@ -50,7 +55,7 @@ def ascii_art(text: str, font_size: int, square_font: bool) -> str:
                     else:
                         line += '█'
             result.append(line)
-        return result
+        return result, prefix_width
 
 
 def main(stdscr):
@@ -66,61 +71,89 @@ def main(stdscr):
     assert sounds
     scr_height, scr_width = stdscr.getmaxyx()
     proc = None
-    character_set = ''
+    words = []
     if 'upper' in args.charset:
-        character_set += string.ascii_uppercase
+        words += list(string.ascii_uppercase)
     if 'lower' in args.charset:
-        character_set += string.ascii_lowercase
+        words += list(string.ascii_lowercase)
     if 'digits' in args.charset:
-        character_set += string.digits
+        words += list(string.digits)
     if 'jeremy' in args.charset:
-        character_set += 'WRTYUOPSJZXCVM'
-    assert character_set
+        words += list('WTUOPSJZXCVBM')
+    if 'word' in args.charset:
+        words += ['Joseph', 'Jeremy', 'mom', 'dad']
+        words += [
+            'the', 'be', 'and', 'a', 'of', 'to', 'in', 'I', 'you', 'it',
+            'have', 'to', 'that', 'for', 'do', 'he', 'with', 'on', 'this',
+            'we', 'that', 'not', 'but', 'they', 'say', 'at', 'what', 'his',
+            'from', 'go', 'or', 'by', 'get', 'she', 'my', 'can', 'as', 'know',
+            'if', 'me', 'your', 'all', 'who', 'will', 'so', 'make', 'just',
+            'up', 'time', 'see', 'her', 'as', 'out', 'one', 'come', 'take',
+            'year', 'him', 'them', 'some', 'want', 'how', 'when', 'now',
+            'like', 'our', 'into', 'here', 'then', 'than', 'look', 'way',
+            'more', 'no', 'yes', 'well', 'also', 'two', 'use', 'tell', 'good',
+            'man', 'day', 'find', 'give', 'more', 'new'
+        ]
+        words += [word.upper() for word in words]
+    assert words
     while True:
-        rand_char = random.choice(character_set)
-        # draw char
+        curses.init_pair(2, curses.COLOR_YELLOW, curses.COLOR_BLACK)
+        curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_BLACK)
         curses.curs_set(False)
         stdscr.clear()
-        # wait until SPACE
         while True:
             c = stdscr.getch()
             if c == 27:  # ESC
                 return
             if c == 32:  # SPACE
                 break
-        lines = ascii_art(rand_char, args.font_size, args.square_font)
-        for i, line in enumerate(lines):
-            stdscr.addstr((scr_height - len(lines)) // 2 + i,
-                          (scr_width - len(line)) // 2, line)
-        start_time = time.time()
-        # get input
-        while True:
-            c = stdscr.getch()
-            if c == 27:  # ESC
-                return
-            if chr(c).upper() == rand_char.upper():
-                break
-        duration = time.time() - start_time
+        word = random.choice(words)
+        done_length = 0
+        word_start_time = time.time()
+        while done_length < len(word):
+            stdscr.clear()
+            # draw
+            lines, done_width = ascii_art(word, done_length, args.font_size,
+                                          args.square_font)
+            for i, line in enumerate(lines):
+                stdscr.addstr((scr_height - len(lines)) // 2 + i,
+                              (scr_width - len(line)) // 2, line[:done_width],
+                              curses.color_pair(2))
+                stdscr.addstr((scr_height - len(lines)) // 2 + i,
+                              (scr_width - len(line)) // 2 + done_width,
+                              line[done_width:], curses.color_pair(3))
+            # get input
+            while True:
+                c = stdscr.getch()
+                if c == 27:  # ESC
+                    return
+                if chr(c).upper() == word[done_length].upper():
+                    done_length += 1
+                    break
+                curses.flash()
+        duration = time.time() - word_start_time
         stdscr.clear()
         curses.endwin()
-        proc = subprocess.Popen(['mplayer', random.choice(sounds)],
-                                stdout=subprocess.DEVNULL,
-                                stderr=subprocess.DEVNULL)
-        if duration < 4:
+        proc = subprocess.Popen(
+            ['mplayer', random.choice(sounds)],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL)
+        if duration < 3 * len(word):
             subprocess.check_call(['sl', '-F'])
             subprocess.check_call(['sl', '-l', '-F'])
             subprocess.check_call(['sl', '-l', '-F'])
-        elif duration < 8:
+        elif duration < 6 * len(word):
             subprocess.check_call(['sl'])
             subprocess.check_call(['sl', '-l'])
             subprocess.check_call(['sl', '-l'])
-        elif duration < 16:
+        elif duration < 12 * len(word):
             subprocess.check_call(['sl'])
             subprocess.check_call(['sl', '-l'])
         else:
             subprocess.check_call(['sl'])
         proc.kill()
         stdscr = curses.initscr()
+        curses.start_color()
 
 
 if __name__ == '__main__':

@@ -2,6 +2,7 @@
 .git/
 cmake-build-debug/
 CMakeLists.txt
+config
 *.pyc
 *.swp
 *~

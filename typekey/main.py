@@ -12,12 +12,16 @@ import os
 from PIL import Image, ImageDraw, ImageFont
 
 
-def ascii_art(text: str, prefex_length: int, font_size: int,
-              square_font: bool) -> (str, int):
+def ascii_art(text: str, prefex_length: int, font_size: int, square_font: bool,
+              max_width: int) -> (str, int):
     ''' Returns the ascii chars and the prefix width'''
-    font = ImageFont.truetype(
-        '/usr/share/fonts/truetype/freefont/FreeSans.ttf', font_size)
-    width, height = font.getsize(text)
+    while True:
+        font = ImageFont.truetype(
+            '/usr/share/fonts/truetype/freefont/FreeSans.ttf', font_size)
+        width, height = font.getsize(text)
+        if width <= max_width:
+            break
+        font_size -= 1
     assert prefex_length >= 0
     assert prefex_length < len(text)
     prefix_width, _ = font.getsize(text[:prefex_length])
@@ -66,6 +70,7 @@ def main(stdscr):
         '--charset', default='upper', help='e.g. upper,lower,digits,jeremy')
     args = parser.parse_args()
 
+    random.seed()
     self_dir = os.path.dirname(os.path.realpath(__file__))
     sounds = glob.glob(self_dir + '/sound/*.mp3')
     assert sounds
@@ -79,7 +84,7 @@ def main(stdscr):
     if 'digits' in args.charset:
         words += list(string.digits)
     if 'jeremy' in args.charset:
-        words += list('WTUOPSJZXCVBM')
+        words += list('QWETYUIOPSDFJKZXCVBM')
     if 'word' in args.charset:
         words += ['Joseph', 'Jeremy', 'mom', 'dad']
         words += [
@@ -114,7 +119,7 @@ def main(stdscr):
             stdscr.clear()
             # draw
             lines, done_width = ascii_art(word, done_length, args.font_size,
-                                          args.square_font)
+                                          args.square_font, scr_width)
             for i, line in enumerate(lines):
                 stdscr.addstr((scr_height - len(lines)) // 2 + i,
                               (scr_width - len(line)) // 2, line[:done_width],
@@ -123,30 +128,33 @@ def main(stdscr):
                               (scr_width - len(line)) // 2 + done_width,
                               line[done_width:], curses.color_pair(3))
             # get input
-            while True:
-                c = stdscr.getch()
-                if c == 27:  # ESC
-                    return
-                if chr(c).upper() == word[done_length].upper():
-                    done_length += 1
-                    break
-                curses.flash()
+            c = stdscr.getch()
+            if c == 27:  # ESC
+                return
+            if chr(c).upper() == word[done_length].upper():
+                done_length += 1
+            else:
+                stdscr.clear()
+                stdscr.refresh()
+                time.sleep(2)
+                curses.flushinp()
         duration = time.time() - word_start_time
         stdscr.clear()
         curses.endwin()
         proc = subprocess.Popen(
             ['mplayer', random.choice(sounds)],
+            stdin=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL)
-        if duration < 3 * len(word):
+        if duration < 1 * len(word):
             subprocess.check_call(['sl', '-F'])
             subprocess.check_call(['sl', '-l', '-F'])
             subprocess.check_call(['sl', '-l', '-F'])
-        elif duration < 6 * len(word):
+        elif duration < 2 * len(word):
             subprocess.check_call(['sl'])
             subprocess.check_call(['sl', '-l'])
             subprocess.check_call(['sl', '-l'])
-        elif duration < 12 * len(word):
+        elif duration < 3 * len(word):
             subprocess.check_call(['sl'])
             subprocess.check_call(['sl', '-l'])
         else:

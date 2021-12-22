@@ -81,7 +81,7 @@ def main(stdscr):
         words += list(string.ascii_uppercase)
     if 'lower' in args.charset:
         words += list(string.ascii_lowercase)
-    if 'digits' in args.charset:
+    if 'digit' in args.charset:
         words += list(string.digits)
     if 'jeremy' in args.charset:
         words += list('QWETYUIOPSDFJKZXCVBM')
@@ -99,7 +99,10 @@ def main(stdscr):
             'more', 'no', 'yes', 'well', 'also', 'two', 'use', 'tell', 'good',
             'man', 'day', 'find', 'give', 'more', 'new'
         ]
-        words += [word.upper() for word in words]
+        if 'upper' in args.charset:
+            words = [word.upper() for word in words]
+        else:
+            words += [word.upper() for word in words]
     assert words
     while True:
         curses.init_pair(2, curses.COLOR_YELLOW, curses.COLOR_BLACK)

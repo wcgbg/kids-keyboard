@@ -5,6 +5,7 @@ import argparse
 import curses
 import simpleaudio
 import os
+import time
 
 
 def normalize(args, i, j):
@@ -23,8 +24,8 @@ def normalize(args, i, j):
 
 def main(stdscr):
     parser = argparse.ArgumentParser(description='Music Toy Editor')
-    parser.add_argument('--num_rows', type=int, default=4)
-    parser.add_argument('--num_cols', type=int, default=8)
+    parser.add_argument('num_rows', type=int)
+    parser.add_argument('num_cols', type=int)
     args = parser.parse_args()
 
     self_dir = os.path.dirname(os.path.realpath(__file__))
@@ -41,7 +42,10 @@ def main(stdscr):
     music = [list('-' * args.num_cols) for i in range(args.num_rows)]
     cursor_i = 0
     cursor_j = 0
+    tempos_bpms = [30, 36, 45, 60, 72, 90, 120, 144, 180]
+    tempo_idx = 4
     is_playing = False
+    player = None
     assert scr_height >= args.num_rows + 2
     assert scr_width >= args.num_cols + 2
     i0 = (scr_height - args.num_rows) // 2
@@ -55,21 +59,37 @@ def main(stdscr):
 
     while True:
         stdscr.clear()
-        curses.curs_set(not is_playing)
-        stdscr.move(i0 + cursor_i, j0 + cursor_j)
         border.box()
+        stdscr.addstr(i0 + args.num_rows + 1, j0, 'TEMPO:{}'.format(
+            tempos_bpms[tempo_idx]))
         for i in range(args.num_rows):
             win.addstr(i, 0, ''.join(music[i]))
         if is_playing:
             win.addch(cursor_i, cursor_j, music[cursor_i][cursor_j],
                       curses.A_REVERSE)
+        curses.curs_set(not is_playing)
+        stdscr.move(i0 + cursor_i, j0 + cursor_j)
         stdscr.refresh()
 
         stdscr.nodelay(is_playing)
         if is_playing:
-            key_to_wave[music[cursor_i][cursor_j]].play().wait_done()
-            if stdscr.getch() == ord(' '):
+            if music[cursor_i][cursor_j] != '-':
+                if player:
+                    player.stop()
+                player = key_to_wave[music[cursor_i][cursor_j]].play()
+            time.sleep(60.0 / tempos_bpms[tempo_idx])
+            c = stdscr.getch()
+            if c == 27:  # ESC
                 is_playing = False
+                if player:
+                    player.stop()
+                player = None
+                return
+            if c == ord(' '):
+                is_playing = False
+                if player:
+                    player.stop()
+                player = None
                 continue
             cursor_j += 1
             cursor_i, cursor_j = normalize(args, cursor_i, cursor_j)
@@ -112,6 +132,12 @@ def main(stdscr):
                     break
                 if c == ord(' '):
                     is_playing = True
+                    break
+                if c == ord('['):
+                    tempo_idx = max(0, tempo_idx - 1)
+                    break
+                if c == ord(']'):
+                    tempo_idx = min(len(tempos_bpms) - 1, tempo_idx + 1)
                     break
 
 
